@@ -9,10 +9,11 @@
 if not "%TORCH_SETUP_FAIL%" == "0" call install-deps.bat
 if not "%TORCH_SETUP_FAIL%" == "0" goto :FAIL
 
+set PATCH_DIR=%TORCH_DISTRO%\win-files\patch
+rem goto RESUME
 echo %ECHO_PREFIX% Updating submodules
 git submodule update --init --recursive
 
-set PATCH_DIR=%TORCH_DISTRO%\win-files\patch
 
 echo %ECHO_PREFIX% Installing common lua packages
 cd %TORCH_DISTRO%\extra\luafilesystem && call %LUAROCKS_CMD% make rockspecs\luafilesystem-1.6.3-1.rockspec || goto :FAIL
@@ -24,16 +25,22 @@ cd %TORCH_DISTRO%\extra\luaffifb && git apply %PATCH_DIR%\luaffifb.patch --white
 cd %TORCH_DISTRO%\pkg\sundown && call %LUAROCKS_CMD% make rocks\sundown-scm-1.rockspec || goto :FAIL
 cd %TORCH_DISTRO%\pkg\cwrap && call %LUAROCKS_CMD% make rocks\cwrap-scm-1.rockspec || goto :FAIL
 cd %TORCH_DISTRO%\pkg\paths && call %LUAROCKS_CMD% make rocks\paths-scm-1.rockspec || goto :FAIL
+
 if "%TORCH_SETUP_HAS_MKL%" == "1" (
   cd %TORCH_DISTRO%\pkg\torch && git apply %PATCH_DIR%\torch.patch --whitespace=fix & ( call %LUAROCKS_CMD% make rocks\torch-scm-1.rockspec INTEL_MKL_DIR="%INTEL_MKL_DIR%" INTEL_COMPILER_DIR="%INTEL_COMPILER_DIR%" || goto :FAIL ) & git apply %PATCH_DIR%\torch.patch --reverse --whitespace=fix
 ) else (
   cd %TORCH_DISTRO%\pkg\torch && git apply %PATCH_DIR%\torch.patch --whitespace=fix & ( call %LUAROCKS_CMD% make rocks\torch-scm-1.rockspec BLAS_LIBRARIES="%BLAS_LIBRARIES%" LAPACK_LIBRARIES="%LAPACK_LIBRARIES%" LAPACK_FOUND=TRUE || goto :FAIL ) & git apply %PATCH_DIR%\torch.patch --reverse --whitespace=fix
 )
 cd %TORCH_DISTRO%\pkg\dok && call %LUAROCKS_CMD% make rocks\dok-scm-1.rockspec || goto :FAIL
-cd %TORCH_DISTRO%\exe\trepl && call %LUAROCKS_CMD% make trepl-scm-1.rockspec || goto :FAIL
+
+cd %TORCH_DISTRO%\exe\trepl && call %LUAROCKS_CMD% make trepl-scm-1.rockspec EDIT_STATIC_DIR=..\\..\\win-files\\3rd\\wineditline-2.206\\lib64 || goto :FAIL
+
 cd %TORCH_DISTRO%\pkg\sys && call %LUAROCKS_CMD% make sys-1.1-0.rockspec || goto :FAIL
 cd %TORCH_DISTRO%\pkg\xlua && call %LUAROCKS_CMD% make xlua-1.0-0.rockspec || goto :FAIL
+
+cd %TORCH_DISTRO%\extra\moses && call %LUAROCKS_CMD% make rockspec\moses-1.6.1-1.rockspec || goto :FAIL
 cd %TORCH_DISTRO%\extra\nn && call %LUAROCKS_CMD% make rocks\nn-scm-1.rockspec || goto :FAIL
+
 cd %TORCH_DISTRO%\extra\graph && call %LUAROCKS_CMD% make rocks\graph-scm-1.rockspec || goto :FAIL
 cd %TORCH_DISTRO%\extra\nngraph && call %LUAROCKS_CMD% make nngraph-scm-1.rockspec || goto :FAIL
 cd %TORCH_DISTRO%\pkg\image && call %LUAROCKS_CMD% make image-1.1.alpha-0.rockspec || goto :FAIL
@@ -44,7 +51,7 @@ if not "%TORCH_SETUP_HAS_CUDA%" == "" if not "%TORCH_VS_TARGET%" == "x86" (
   cd %TORCH_DISTRO%\extra\cutorch && call %LUAROCKS_CMD% make rocks\cutorch-scm-1.rockspec || goto :FAIL
   cd %TORCH_DISTRO%\extra\cunn && call %LUAROCKS_CMD% make rocks\cunn-scm-1.rockspec || goto :FAIL
 )
-
+:RESUME
 echo %ECHO_PREFIX% Installing optional Torch7 packages
 cd %TORCH_DISTRO%\pkg\gnuplot && call %LUAROCKS_CMD% make rocks\gnuplot-scm-1.rockspec
 cd %TORCH_DISTRO%\exe\env && call %LUAROCKS_CMD% make env-scm-1.rockspec

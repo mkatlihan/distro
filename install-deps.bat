@@ -20,16 +20,16 @@ REM  set TORCH_CONDA_ENV=mytorch7
 
 :: which blas/lapack libraries will be used, default to openblas installed by conda
 :: [1] mkl: download from https://software.intel.com/intel-mkl, install and set following two variables
-REM  set INTEL_MKL_DIR=D:\\Intel\\SWTools\\compilers_and_libraries\\windows\\mkl\\
-REM  set INTEL_COMPILER_DIR=D:\\Intel\\SWTools\\compilers_and_libraries\\windows\\compiler\\
+set INTEL_MKL_DIR=C:\\usr\\Intel\\Compiler\\11.1\\067\\mkl\\em64t
+set INTEL_COMPILER_DIR=C:\\usr\\Intel\\Compiler\\11.1\\067\\bin\\intel64
 :: [2] other: set path to the blas library and path to the laback library
 :: both BLAS and LAPACK should be set even if they refer to the same library
 :: take openblas for example: download latest release from https://github.com/xianyi/OpenBLAS/releases/latest
 :: use mingw cross compiler tools in cygwin, since mingw windows native gfortrain is available in cygwin but not in msys2
 :: compilation command in cygwin: make CC=x86_64-w64-mingw32-gcc FC=x86_64-w64-mingw32-gfortran CROSS_SUFFIX=x86_64-w64-mingw32-
 :: please refer to openblas's README for detailed installation instructions
-set BLAS_LIBRARIES=C:\vcpkg\installed\x64-windows\lib\openblas.lib
-set LAPACK_LIBRARIES=C:\vcpkg\installed\x64-windows\lib\openblas.lib
+rem set BLAS_LIBRARIES=C:\vcpkg\installed\x64-windows\lib
+rem set LAPACK_LIBRARIES=J:\\opt\\datamining\\Torch\\torch7x64\\WindowsTorch\\lapack\\lib\\liblapack.lib
 
 :: where to find cudnn library
 REM  set CUDNN_PATH=D:\NVIDIA\CUDNN\v5.1\bin\cudnn64_5.dll
@@ -277,7 +277,13 @@ if exist "%TORCH_CONDA_PKGS%" del /q %TORCH_CONDA_PKGS%
 
 echo %ECHO_PREFIX% Git clone luarocks for its tools
 cd %TORCH_DISTRO%\exe\
-if not exist luarocks\.git git clone https://github.com/keplerproject/luarocks.git luarocks
+if not exist luarocks\.git (
+  git clone https://github.com/keplerproject/luarocks.git luarocks 
+  cd luarocks 
+  git fetch --tags
+  git checkout tags/v2.4.3
+  cd ..
+)
 set PATH=%TORCH_DISTRO%\exe\luarocks\win32\tools\;%PATH%;
 
 ::::     install lua       ::::
@@ -288,7 +294,7 @@ if not "%TORCH_LUAJIT_BRANCH%" == "" (
   if not exist %TORCH_LUA_SOURCE%\.git git clone -b %TORCH_LUAJIT_BRANCH% http://luajit.org/git/luajit-2.0.git %TORCH_LUA_SOURCE% || goto Fail
   cd %TORCH_LUA_SOURCE% && ( if "%TORCH_UPDATE_DEPS%" == "1" git pull ) & cd src
 ) else (
-  if not exist %TORCH_LUA_SOURCE%.tar.gz wget -nc https://www.lua.org/ftp/%TORCH_LUA_SOURCE%.tar.gz --no-check-certificate || goto Fail
+  wget -nc https://www.lua.org/ftp/%TORCH_LUA_SOURCE%.tar.gz --no-check-certificate || goto Fail
   7z x %TORCH_LUA_SOURCE%.tar.gz -y >NUL && 7z x %TORCH_LUA_SOURCE%.tar -y >NUL && cd %TORCH_LUA_SOURCE%\src
 )
 if not "%TORCH_LUAJIT_BRANCH%"=="" (
@@ -318,7 +324,13 @@ for %%g in (lua.h,luaconf.h,lualib.h,lauxlib.h) do copy /y %%g %TORCH_INSTALL_IN
 
 echo %ECHO_PREFIX% Installing luarocks
 cd %TORCH_DISTRO%\exe\
-if not exist luarocks\.git git clone https://github.com/keplerproject/luarocks.git luarocks
+if not exist luarocks\.git (
+  git clone https://github.com/keplerproject/luarocks.git luarocks 
+  cd luarocks 
+  git fetch --tags
+  git checkout tags/v2.3.0
+  cd ..
+)  
 cd luarocks && ( if "%TORCH_UPDATE_DEPS%" == "1" git pull ) & call install.bat /F /Q /P %TORCH_INSTALL_ROC% /SELFCONTAINED /FORCECONFIG /NOREG /NOADMIN /LUA %TORCH_INSTALL_DIR% || goto FAIL
 for /f %%a in ('dir %TORCH_INSTALL_ROC%\config*.lua /b') do set LUAROCKS_CONFIG=%%a
 set LUAROCKS_CONFIG=%TORCH_INSTALL_ROC%\%LUAROCKS_CONFIG%
@@ -333,7 +345,7 @@ set LUAROCKS_CMD=%TORCH_INSTALL_DIR%\luarocks.cmd
 
 echo %ECHO_PREFIX% Installing wineditline for trepl package
 cd %TORCH_DISTRO%\win-files\3rd\
-if not exist wineditline.zip wget -nc https://sourceforge.net/projects/mingweditline/files/wineditline-2.206.zip/download --no-check-certificate -O wineditline.zip
+wget -nc https://sourceforge.net/projects/mingweditline/files/wineditline-2.206.zip/download --no-check-certificate -O wineditline.zip
 7z x wineditline.zip -y >NUL
 cd wineditline*
 cmake -E make_directory build && cd build && cmake .. -G "NMake Makefiles" -DLIB_SUFFIX="64" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=..\ && nmake install
@@ -385,7 +397,7 @@ if "%TORCH_VS_VERSION%" == "16" (
 ) else (
   set VCVARSALL_BAT_PATH=..\..\VC\vcvarsall.bat
 )
-echo for /f "delims=" %%%%i in ('call echo %%%%VS%TORCH_VS_VERSION%0COMNTOOLS%%%%') do call "%%%%i%VCVARSALL_BAT_PATH%" %TORCH_VS_PLATFORM%>> %TORCHACTIVATE_CMD%
+echo REM for /f "delims=" %%%%i in ('call echo %%%%VS%TORCH_VS_VERSION%0COMNTOOLS%%%%') do call "%%%%i%VCVARSALL_BAT_PATH%" %TORCH_VS_PLATFORM%>> %TORCHACTIVATE_CMD%
 echo set PATH=%NEW_PATH%>> %TORCHACTIVATE_CMD%
 echo set LUA_PATH=%NEW_LUA_PATH%>> %TORCHACTIVATE_CMD%
 echo set LUA_CPATH=%NEW_LUA_CPATH%>> %TORCHACTIVATE_CMD%
@@ -401,7 +413,7 @@ if not "%LUAJIT_CMD%" == "" (
   echo endlocal>> "%LUAJIT_CMD%"
 )
 
-if not "%LUA_CMD%" == "" (
+if not "%LUA_CMD%" == "" ( 
   if exist "%LUA_CMD%" del %LUA_CMD%
   echo @echo off>> "%LUA_CMD%"
   echo setlocal>> "%LUA_CMD%"
@@ -438,6 +450,7 @@ echo goto EOF>> %CMAKE_CMD%
 echo :G_NMake>> %CMAKE_CMD%
 echo shift>> %CMAKE_CMD%
 echo cmake.exe .. -G "NMake Makefiles" %%*>> %CMAKE_CMD%
+echo :EOF>> %CMAKE_CMD%
 
 set TORCH_SETUP_FAIL=0
 cd %TORCH_DISTRO%
