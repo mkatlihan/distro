@@ -1,0 +1,26 @@
+diff --git a/lib/TH/THGeneral.h.in b/lib/TH/THGeneral.h.in
+index 0e1cb5d..9487f21 100644
+--- a/lib/TH/THGeneral.h.in
++++ b/lib/TH/THGeneral.h.in
+@@ -14,7 +14,7 @@
+ #cmakedefine USE_BLAS
+ #cmakedefine USE_LAPACK
+ #cmakedefine BLAS_F2C
+-#cmakedefine BLAS_USE_CBLAS_DOT
++//#cmakedefine BLAS_USE_CBLAS_DOT
+ 
+ #ifdef __cplusplus
+ # define TH_EXTERNC extern "C"
+diff --git a/lib/TH/generic/THBlas.c b/lib/TH/generic/THBlas.c
+index bcd2a65..bc99f58 100644
+--- a/lib/TH/generic/THBlas.c
++++ b/lib/TH/generic/THBlas.c
+@@ -28,7 +28,7 @@ inline ffloat sdot_(const int *n, const float *x, const int *incx, const float *
+ }
+ #endif
+ #else
+-TH_EXTERNC ffloat sdot_(int *n, float *x, int *incx, float *y, int *incy);
++TH_EXTERNC ffloat sdot_(int *n, float *x, int *incx, float *y, int *incy); 
+ #endif
+ TH_EXTERNC void dgemv_(char *trans, int *m, int *n, double *alpha, double *a, int *lda, double *x, int *incx, double *beta, double *y, int *incy);
+ TH_EXTERNC void sgemv_(char *trans, int *m, int *n, float *alpha, float *a, int *lda, float *x, int *incx, float *beta, float *y, int *incy);

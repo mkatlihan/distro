@@ -20,8 +20,11 @@ REM  set TORCH_CONDA_ENV=mytorch7
 
 :: which blas/lapack libraries will be used, default to openblas installed by conda
 :: [1] mkl: download from https://software.intel.com/intel-mkl, install and set following two variables
-set INTEL_MKL_DIR=C:\\usr\\Intel\\Compiler\\11.1\\067\\mkl\\em64t
-set INTEL_COMPILER_DIR=C:\\usr\\Intel\\Compiler\\11.1\\067\\bin\\intel64
+rem set INTEL_MKL_DIR=C:\\usr\\Intel\\Compiler\\11.1\\067\\mkl\\em64t
+rem set INTEL_COMPILER_DIR=C:\\usr\\Intel\\Compiler\\11.1\\067\\bin\\intel64
+set "INTEL_MKL_DIR=C:\Program Files (x86)\IntelSWTools\compilers_and_libraries_2018.2.185\windows\mkl"
+set "INTEL_COMPILER_DIR=C:\Program Files (x86)\IntelSWTools\compilers_and_libraries_2018.2.185\windows\compiler"
+
 :: [2] other: set path to the blas library and path to the laback library
 :: both BLAS and LAPACK should be set even if they refer to the same library
 :: take openblas for example: download latest release from https://github.com/xianyi/OpenBLAS/releases/latest
@@ -46,6 +49,7 @@ set TORCH_SETUP_FAIL=1
 :::: validate msvc version  ::::
 
 if "%VisualStudioVersion%" == "" (
+  if not "%VS170COMNTOOLS%" == "" ( call "%VS170COMNTOOLS%..\..\VC\Auxiliary\Build\vcvarsall.bat" x64 && goto VS_SETUP)
   if not "%VS160COMNTOOLS%" == "" ( call "%VS160COMNTOOLS%..\..\VC\Auxiliary\Build\vcvarsall.bat" x64 && goto VS_SETUP)
   if not "%VS150COMNTOOLS%" == "" ( call "%VS150COMNTOOLS%..\..\VC\Auxiliary\Build\vcvarsall.bat" x64 && goto VS_SETUP)
   if not "%VS140COMNTOOLS%" == "" ( call "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat" x64 && goto VS_SETUP)
@@ -179,7 +183,7 @@ if "%CONDA_CMD%" == "" (
   echo %ECHO_PREFIX% Can not find conda, some dependencies can not be resolved
   if not "%TORCH_SETUP_HAS_BLAS%" == "1" (
     echo %ECHO_PREFIX% Can not install torch, please either specify the blas library or install conda
-    goto FAIL
+    goto NO_CONDA
   )
   echo %ECHO_PREFIX% goto NO_CONDA
   goto NO_CONDA
@@ -395,7 +399,11 @@ echo set TORCH_VS_PLATFORM=%TORCH_VS_PLATFORM%>> %TORCHACTIVATE_CMD%
 if "%TORCH_VS_VERSION%" == "16" (
   set VCVARSALL_BAT_PATH=..\..\VC\Auxiliary\Build\vcvarsall.bat
 ) else (
-  set VCVARSALL_BAT_PATH=..\..\VC\vcvarsall.bat
+  if "%TORCH_VS_VERSION%" == "17" (
+    set VCVARSALL_BAT_PATH=..\..\VC\Auxiliary\Build\vcvarsall.bat
+  ) else (
+    set VCVARSALL_BAT_PATH=..\..\VC\vcvarsall.bat
+  )
 )
 echo REM for /f "delims=" %%%%i in ('call echo %%%%VS%TORCH_VS_VERSION%0COMNTOOLS%%%%') do call "%%%%i%VCVARSALL_BAT_PATH%" %TORCH_VS_PLATFORM%>> %TORCHACTIVATE_CMD%
 echo set PATH=%NEW_PATH%>> %TORCHACTIVATE_CMD%
