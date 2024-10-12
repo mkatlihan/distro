@@ -369,11 +369,17 @@ copy /y %TORCH_DISTRO%\win-files\3rd\dlfcn-win32\bin\*.dll %TORCH_INSTALL_BIN%\
 
 echo %ECHO_PREFIX% Downloading graphviz for graph package
 cd %TORCH_DISTRO%\win-files\3rd\
-wget -nc https://github.com/mahkoCosmo/GraphViz_x64/raw/master/graphviz-2.38_x64.tar.gz --no-check-certificate -O graphviz-2.38_x64.tar.gz
-7z x graphviz-2.38_x64.tar.gz -y && 7z x graphviz-2.38_x64.tar -ographviz-2.38_x64 -y >NUL
-if not exist %TORCH_INSTALL_BIN%\graphviz md %TORCH_INSTALL_BIN%\graphviz
-copy /y %TORCH_DISTRO%\win-files\3rd\graphviz-2.38_x64\bin\ %TORCH_INSTALL_BIN%\graphviz\
-
+if "%TORCH_VS_TARGET%" == "x64" (
+    wget -nc https://github.com/mahkoCosmo/GraphViz_x64/raw/master/graphviz-2.38_x64.tar.gz --no-check-certificate -O graphviz-2.38_x64.tar.gz
+    7z x graphviz-2.38_x64.tar.gz -y && 7z x graphviz-2.38_x64.tar -ographviz-2.38_x64 -y >NUL
+    if not exist %TORCH_INSTALL_BIN%\graphviz md %TORCH_INSTALL_BIN%\graphviz
+    copy /y %TORCH_DISTRO%\win-files\3rd\graphviz-2.38_x64\bin\ %TORCH_INSTALL_BIN%\graphviz\
+) else (
+    wget -nc https://www2.graphviz.org/Archive/stable/windows/graphviz-2.38.zip --no-check-certificate -O graphviz-2.38.zip
+    7z x graphviz-2.38.zip -ographviz-2.38_x86 -y >NUL
+    if not exist %TORCH_INSTALL_BIN%\graphviz md %TORCH_INSTALL_BIN%\graphviz
+    copy /y %TORCH_DISTRO%\win-files\3rd\graphviz-2.38_x86\release\bin\* %TORCH_INSTALL_BIN%\graphviz\
+)
 set NEW_PATH=%NEW_PATH%;%%TORCH_INSTALL_DIR%%\bin\graphviz
 
 ::::    create cmd utils   ::::
