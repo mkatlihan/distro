@@ -70,6 +70,7 @@ if "%ERRORLEVEL%" == "0" (
   if "%TORCH_USE_LUAJIT%" == "1" %LUA% -lcudnn -e "print('cudnn loaded succesfully')"
   call th -lcutorch    -e "cutorch.test()"
   call th -lcunn       -e "nn.testcuda()"
+  call th -lcudnn extra/cudnn/test/test.lua
 ) else (
   echo "CUDA not found"
 )
