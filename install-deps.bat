@@ -24,6 +24,8 @@ rem set INTEL_MKL_DIR=C:\\usr\\Intel\\Compiler\\11.1\\067\\mkl\\em64t
 rem set INTEL_COMPILER_DIR=C:\\usr\\Intel\\Compiler\\11.1\\067\\bin\\intel64
 set "INTEL_MKL_DIR=C:\Program Files (x86)\IntelSWTools\compilers_and_libraries_2018.2.185\windows\mkl"
 set "INTEL_COMPILER_DIR=C:\Program Files (x86)\IntelSWTools\compilers_and_libraries_2018.2.185\windows\compiler"
+rem set "INTEL_MKL_DIR=C:\usr\Intel\oneAPI\mkl\2023.1.0"
+rem set "INTEL_COMPILER_DIR=C:\Program Files (x86)\Intel\oneAPI\compiler\2023.1.0\windows\compiler"
 
 :: [2] other: set path to the blas library and path to the laback library
 :: both BLAS and LAPACK should be set even if they refer to the same library
