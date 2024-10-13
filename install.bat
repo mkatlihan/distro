@@ -10,7 +10,7 @@ if not "%TORCH_SETUP_FAIL%" == "0" call install-deps.bat
 if not "%TORCH_SETUP_FAIL%" == "0" goto :FAIL
 
 set PATCH_DIR=%TORCH_DISTRO%\win-files\patch
-goto RESUME
+rem goto RESUME
 echo %ECHO_PREFIX% Updating submodules
 git submodule update --init --recursive --verbose
 
