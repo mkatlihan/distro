@@ -1,0 +1,36 @@
+diff --git a/test/test.lua b/test/test.lua
+index d958041..e32a4c8 100644
+--- a/test/test.lua
++++ b/test/test.lua
+@@ -38,7 +38,22 @@ local testparams = nil
+ local function cast(input)
+    return input:type(testparams.test_type)
+ end
++--[[
++-- Check if CudaHalfTensor exists
++if not torch.CudaHalfTensor then
++   -- Create a dummy CudaHalfTensor class if HALF_TENSOR feature is disabled
++   torch.CudaHalfTensor = torch.class('torch.CudaHalfTensor', 'torch.CudaTensor')
++
++   -- Define a method to convert to a regular CudaTensor
++   function torch.CudaHalfTensor:cuda()
++      return torch.CudaTensor(self:size()):copy(self)
++   end
+ 
++   -- Define a method to convert back to CudaHalfTensor (does nothing in this case)
++   function torch.CudaHalfTensor:cudaHalf()
++      return self -- just return the original tensor, as we are not using half-precision
++   end
++end
+ -- workarounds
+ function torch.CudaHalfTensor:__sub(b)
+    return self:cuda() - b:cuda()
+@@ -51,7 +66,7 @@ end
+ function torch.CudaHalfTensor:mean()
+    return self:cuda():mean()
+ end
+-
++]]
+ function torch.CudaDoubleTensor:mean()
+    return self:cuda():mean()
+ end
