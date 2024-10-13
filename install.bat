@@ -44,7 +44,9 @@ cd %TORCH_DISTRO%\pkg\xlua && call %LUAROCKS_CMD% make xlua-1.0-0.rockspec || go
 
 cd %TORCH_DISTRO%\extra\moses && call %LUAROCKS_CMD% make rockspec\moses-1.6.1-1.rockspec || goto :FAIL
 cd %TORCH_DISTRO%\extra\nn && call %LUAROCKS_CMD% make rocks\nn-scm-1.rockspec || goto :FAIL
-
+cd %TORCH_DISTRO%\extra 
+if not exist fbnn\.git git clone https://github.com/facebook/fbnn.git
+cd fbnn && %LUAROCKS_CMD% make rocks/fbnn-scm-1.rockspec
 cd %TORCH_DISTRO%\extra\graph && call %LUAROCKS_CMD% make rocks\graph-scm-1.rockspec || goto :FAIL
 cd %TORCH_DISTRO%\extra\nngraph && call %LUAROCKS_CMD% make nngraph-scm-1.rockspec || goto :FAIL
 cd %TORCH_DISTRO%\pkg\image && call %LUAROCKS_CMD% make image-1.1.alpha-0.rockspec || goto :FAIL
