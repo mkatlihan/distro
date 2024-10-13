@@ -123,6 +123,11 @@ cd ${THIS_DIR}/exe/trepl     && $PREFIX/bin/luarocks make trepl-scm-1.rockspec  
 cd ${THIS_DIR}/pkg/sys       && $PREFIX/bin/luarocks make sys-1.1-0.rockspec           || exit 1
 cd ${THIS_DIR}/pkg/xlua      && $PREFIX/bin/luarocks make xlua-1.0-0.rockspec          || exit 1
 cd ${THIS_DIR}/extra/moses   && $PREFIX/bin/luarocks make rockspec/moses-1.6.1-1.rockspec || exit 1
+cd ${THIS_DIR}/extra
+if [ ! -d "fbnn/.git" ]; then
+  git clone https://github.com/facebook/fbnn.git
+fi
+cd ${THIS_DIR}/extra/fbnn && $LUAROCKS_CMD make rocks/fbnn-scm-1.rockspec
 cd ${THIS_DIR}/extra/nn      && $PREFIX/bin/luarocks make rocks/nn-scm-1.rockspec      || exit 1
 cd ${THIS_DIR}/extra/graph   && $PREFIX/bin/luarocks make rocks/graph-scm-1.rockspec   || exit 1
 cd ${THIS_DIR}/extra/nngraph && $PREFIX/bin/luarocks make nngraph-scm-1.rockspec       || exit 1
