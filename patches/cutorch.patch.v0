@@ -1,0 +1,147 @@
+diff --git a/init.c b/init.c
+index 8b32a1a..c0b9a61 100644
+--- a/init.c
++++ b/init.c
+@@ -935,7 +935,11 @@ static int cutorch_isManagedPtr(lua_State *L)
+     lua_pushboolean(L, 0);
+   } else {
+     THCudaCheck(res);
++#if CUDA_VERSION < 10000
+     lua_pushboolean(L, attributes.isManaged);
++#else
++    lua_pushboolean(L, 0);  // Or handle as per your application's logic
++#endif        
+   }
+   return 1;
+ }
+diff --git a/lib/THC/THCGeneral.c b/lib/THC/THCGeneral.c
+index 5e966cf..3c91361 100644
+--- a/lib/THC/THCGeneral.c
++++ b/lib/THC/THCGeneral.c
+@@ -956,7 +956,7 @@ void THCHeapUpdate(THCState *state, ptrdiff_t size) {
+ #include "THCAllocator.c"
+ 
+ /* from THCHalf.h */
+-
++#ifdef CUDA_HALF_TENSOR
+ half THC_float2half(float f)
+ {
+   half h;
+@@ -970,3 +970,4 @@ float  THC_half2float(half h)
+   TH_halfbits2float(&h.x, &f);
+   return f;
+ }
++#endif
+\ No newline at end of file
+diff --git a/lib/THC/THCHalf.h b/lib/THC/THCHalf.h
+index d5bd5c1..9b3a4f3 100644
+--- a/lib/THC/THCHalf.h
++++ b/lib/THC/THCHalf.h
+@@ -7,7 +7,7 @@
+ #if CUDA_VERSION >= 7050 || CUDA_HAS_FP16
+ #define CUDA_HALF_TENSOR 1
+ #endif
+-
++#undef CUDA_HALF_TENSOR
+ #ifdef CUDA_HALF_TENSOR
+ 
+ #include <cuda_fp16.h>
+diff --git a/lib/THC/THCReduce.cuh b/lib/THC/THCReduce.cuh
+index b7df49b..e4928c7 100644
+--- a/lib/THC/THCReduce.cuh
++++ b/lib/THC/THCReduce.cuh
+@@ -315,7 +315,7 @@ bool THC_reduceDim(THCState* state,
+           block.y *= 2;
+           ydim /= 2;
+         }
+-        THC_getGridFromTiles(THCCeilDiv(outElements, (long)block.x), grid);
++        THC_getGridFromTiles(THCCeilDiv((long)outElements, (long)block.x), grid);
+ 
+     }
+   }
+diff --git a/lib/THC/THCTensorMode.cuh b/lib/THC/THCTensorMode.cuh
+index b67ac2a..b229250 100644
+--- a/lib/THC/THCTensorMode.cuh
++++ b/lib/THC/THCTensorMode.cuh
+@@ -4,7 +4,7 @@
+ #include "THCNumerics.cuh"
+ #include "THCSortUtils.cuh"
+ #include "THCScanUtils.cuh"
+-
++#ifdef CUDA_HALF_TENSOR
+ struct ThrustHalfLess
+ {
+   __host__ __device__ inline bool operator()(const half& lhs, const half& rhs) {
+@@ -35,7 +35,7 @@ struct ThrustHalfEqualToPredicate
+ 
+   half val_;
+ };
+-
++#endif
+ template <typename T>
+ struct BinaryAddOp {
+   __host__ __device__ inline T operator()(const T a, const T b) {
+diff --git a/lib/THC/cmake/select_compute_arch.cmake b/lib/THC/cmake/select_compute_arch.cmake
+index 4b27441..c8c7c6d 100644
+--- a/lib/THC/cmake/select_compute_arch.cmake
++++ b/lib/THC/cmake/select_compute_arch.cmake
+@@ -21,7 +21,8 @@
+ set(CUDA_KNOWN_GPU_ARCHITECTURES  "Fermi" "Kepler" "Maxwell")
+ 
+ # This list will be used for CUDA_ARCH_NAME = Common option (enabled by default)
+-set(CUDA_COMMON_GPU_ARCHITECTURES "3.0" "3.5" "5.0")
++#set(CUDA_COMMON_GPU_ARCHITECTURES "3.0" "3.5" "5.0")
++set(CUDA_COMMON_GPU_ARCHITECTURES "5.0")
+ 
+ if (CUDA_VERSION VERSION_GREATER "6.5")
+   list(APPEND CUDA_KNOWN_GPU_ARCHITECTURES "Kepler+Tegra" "Kepler+Tesla" "Maxwell+Tegra")
+@@ -34,8 +35,9 @@ if (CUDA_VERSION VERSION_GREATER "7.5")
+ else()
+   list(APPEND CUDA_COMMON_GPU_ARCHITECTURES "5.2+PTX")
+ endif ()
+-
+-
++set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -allow-unsupported-compiler")
++# Append C++11 to CUDA NVCC flags
++#list(APPEND CUDA_NVCC_FLAGS -std=c++11)
+ 
+ ################################################################################################
+ # A function for automatic detection of GPUs installed  (if autodetection is enabled)
+diff --git a/lib/THC/generic/THCTensor.c b/lib/THC/generic/THCTensor.c
+index 6a4051f..e007064 100644
+--- a/lib/THC/generic/THCTensor.c
++++ b/lib/THC/generic/THCTensor.c
+@@ -334,12 +334,18 @@ void THCTensor_(expandNd)(THCState *state, THCTensor **rets, THCTensor **ops, in
+     THArgCheck(THCTensor_(nDimension)(state, ops[i]) > 0, i, "can't expand empty tensor %d", i);
+   }
+ 
+-  long *op_sizes[count];
+-  long op_dims[count];
+-
++  long *op_sizes=NULL;
++  long *op_dims=NULL;
++  if (count > 0) {
++    op_sizes = THAlloc(sizeof(long)*count);
++    op_dims = THAlloc(sizeof(long)*count);
++  } else {
++    return;
++  }
++  // Populate op_sizes and op_dims
+   for (int i = 0; i < count; ++i) {
+-    op_sizes[i] = ops[i]->size;
+-    op_dims[i] = ops[i]->nDimension;
++    op_sizes[i] = THCTensor_(size)(state, ops[i], 0);  // Size of the tensor
++    op_dims[i] = THCTensor_(nDimension)(state, ops[i]);  // Number of dimensions
+   }
+ 
+   THLongStorage *sizes = THLongStorage_new();
+@@ -360,7 +366,8 @@ void THCTensor_(expandNd)(THCState *state, THCTensor **rets, THCTensor **ops, in
+   for (int i = 0; i < count; ++i) {
+     THCTensor_(expand)(state, rets[i], ops[i], sizes);
+   }
+-
++  THFree(op_sizes);
++  THFree(op_dims);
+   THLongStorage_free(sizes);
+ }
+ 
