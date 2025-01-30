@@ -1,3 +1,25 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 8d3ece7..f7dcc0c 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -2,14 +2,16 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8 FATAL_ERROR)
+ CMAKE_POLICY(VERSION 2.8)
+ 
+ SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lib/THC/cmake ${CMAKE_MODULE_PATH})
++add_definitions(-D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH)
+ 
+ FIND_PACKAGE(Torch REQUIRED)
+ FIND_PACKAGE(CUDA 6.5 REQUIRED)
+ FIND_PACKAGE(MAGMA)
+ 
+ IF (NOT WIN32)
+-SET(CMAKE_C_FLAGS "-std=c99 -Werror=implicit-function-declaration ${CMAKE_C_FLAGS}")
++	SET(CMAKE_C_FLAGS "-std=c99 -Werror=implicit-function-declaration ${CMAKE_C_FLAGS}")
+ ENDIF (NOT WIN32)
++
+ IF(CUDA_HAS_FP16 OR NOT ${CUDA_VERSION} LESS 7.5)
+   ADD_DEFINITIONS(-DTH_GENERIC_USE_HALF=1)
+   ADD_DEFINITIONS(-DCUDA_HAS_FP16=1)
 diff --git a/init.c b/init.c
 index 8b32a1a..c0b9a61 100644
 --- a/init.c
@@ -14,6 +36,23 @@ index 8b32a1a..c0b9a61 100644
    }
    return 1;
  }
+diff --git a/lib/THC/CMakeLists.txt b/lib/THC/CMakeLists.txt
+index 1ea6039..79105aa 100644
+--- a/lib/THC/CMakeLists.txt
++++ b/lib/THC/CMakeLists.txt
+@@ -112,9 +112,11 @@ IF(APPLE)
+   ENDIF()
+   # CUDA 7 supports clang and libc++ so no need to change anything
+ ENDIF(APPLE)
+-
++MESSAGE(STATUS "Detect CUDA architecture and get best NVCC flags")
++MESSAGE(STATUS "CUDA_SELECT_NVCC_ARCH_FLAGS: " ${CUDA_SELECT_NVCC_ARCH_FLAGS})
+ # Detect CUDA architecture and get best NVCC flags
+ IF(NOT COMMAND CUDA_SELECT_NVCC_ARCH_FLAGS OR MSVC)
++  MESSAGE(STATUS "Including ${CMAKE_CURRENT_SOURCE_DIR}/cmake/select_compute_arch.cmake")
+   INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/select_compute_arch.cmake)
+ ENDIF()
+ LIST(APPEND CUDA_NVCC_FLAGS $ENV{TORCH_NVCC_FLAGS})
 diff --git a/lib/THC/THCGeneral.c b/lib/THC/THCGeneral.c
 index 5e966cf..3c91361 100644
 --- a/lib/THC/THCGeneral.c
@@ -82,7 +121,7 @@ index b67ac2a..b229250 100644
  struct BinaryAddOp {
    __host__ __device__ inline T operator()(const T a, const T b) {
 diff --git a/lib/THC/cmake/select_compute_arch.cmake b/lib/THC/cmake/select_compute_arch.cmake
-index 4b27441..c8c7c6d 100644
+index 4b27441..7466646 100644
 --- a/lib/THC/cmake/select_compute_arch.cmake
 +++ b/lib/THC/cmake/select_compute_arch.cmake
 @@ -21,7 +21,8 @@
@@ -91,11 +130,15 @@ index 4b27441..c8c7c6d 100644
  # This list will be used for CUDA_ARCH_NAME = Common option (enabled by default)
 -set(CUDA_COMMON_GPU_ARCHITECTURES "3.0" "3.5" "5.0")
 +#set(CUDA_COMMON_GPU_ARCHITECTURES "3.0" "3.5" "5.0")
-+set(CUDA_COMMON_GPU_ARCHITECTURES "5.0")
++set(CUDA_COMMON_GPU_ARCHITECTURES "3.5" "5.0")
  
  if (CUDA_VERSION VERSION_GREATER "6.5")
    list(APPEND CUDA_KNOWN_GPU_ARCHITECTURES "Kepler+Tegra" "Kepler+Tesla" "Maxwell+Tegra")
-@@ -34,8 +35,9 @@ if (CUDA_VERSION VERSION_GREATER "7.5")
+@@ -31,11 +32,13 @@ endif ()
+ if (CUDA_VERSION VERSION_GREATER "7.5")
+   list(APPEND CUDA_KNOWN_GPU_ARCHITECTURES "Pascal")
+   list(APPEND CUDA_COMMON_GPU_ARCHITECTURES "6.0" "6.1" "6.1+PTX")
++  list(APPEND CUDA_COMMON_GPU_ARCHITECTURES "8.9")
  else()
    list(APPEND CUDA_COMMON_GPU_ARCHITECTURES "5.2+PTX")
  endif ()
