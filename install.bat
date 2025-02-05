@@ -68,6 +68,9 @@ cd %TORCH_DISTRO%\exe\qtlua && call %LUAROCKS_CMD% make rocks\qtlua-scm-1.rocksp
 cd %TORCH_DISTRO%\pkg\qttorch && call %LUAROCKS_CMD% make rocks\qttorch-scm-1.rockspec
 cd %TORCH_DISTRO%\extra\threads && call %LUAROCKS_CMD% make rocks\threads-scm-1.rockspec WIN_DLFCN_INCDIR=%WIN_DLFCN_INCDIR% WIN_DLFCN_LIBDIR=%WIN_DLFCN_LIBDIR%
 cd %TORCH_DISTRO%\extra\argcheck && call %LUAROCKS_CMD% make rocks\argcheck-scm-1.rockspec
+cd %TORCH_DISTRO%\extra\torchx && call %LUAROCKS_CMD% make torchx-scm-1.rockspec
+cd %TORCH_DISTRO%\extra\dpnn && call %LUAROCKS_CMD% make rocks\dpnn-scm-1.rockspec
+cd %TORCH_DISTRO%\extra\rnn && call %LUAROCKS_CMD% make rocks\rnn-scm-1.rockspec
 :RESUME
 if not "%TORCH_SETUP_HAS_CUDA%" == "" if not "%TORCH_VS_TARGET%" == "x86" (
   echo %ECHO_PREFIX% Found CUDA on your machine. Installing optional CUDA packages
